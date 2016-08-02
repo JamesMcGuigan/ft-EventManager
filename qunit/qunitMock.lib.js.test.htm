@@ -1,0 +1,561 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <link rel="stylesheet" href="testsuite.css" type="text/css" media="screen" />
+    <title>qunitMock.js</title>
+</head>
+<body>
+    <h1>qunitMock.js</h1>
+
+    <h2 id="banner">
+    </h2>
+
+    <h2 id="userAgent">
+    </h2>
+
+    <ol id="tests">
+    </ol>
+
+    <div id="main">
+    </div>
+
+    <div id="sandbox">
+        <form id="mockForm">
+            <input type="text" name="text" value="Text Value" ></input>
+            <input type="hidden" name="hidden" value="Hidden Value" ></input>
+            <input type="checkbox" name="checkbox" checked="checked"/>
+            <textarea name="textarea">Textarea Value</textarea>
+            <select name="select">
+                <option>Null</option>
+                <option selected="selected">Select Value</option>
+            </select>
+            <input type="radio" name="radio" value="Null" ></input>
+            <input type="radio" name="radio" value="Radio Value" selected="selected"></input>
+        </form>
+    </div>
+</body>
+</html>
+
+   <script type="text/javascript" src="../../../../main/webapp/media/js/lib/external/firebug/firebugx.js"></script>
+   <script type="text/javascript" src="../../../../main/webapp/media/js/lib/external/jquery/jquery-1.3.2.js"></script>
+   <script type="text/javascript" src="qunitMock.lib.js"></script>
+
+<script>
+    $(document).ready( function() {
+
+        module( "qunitMock.js" );
+
+        test( "mockObject - Mock works as original", function() {
+            expect( 6 );
+            same( mockObject({}), {}, "mockObject({})" );
+
+            var original = {
+                "str":  "string",
+                "arr":  ["a","b","c"],
+                "funcStr":  function(a,b) { return "string:"+a+b; },
+                "funcArr":  function(a,b) { return [a,b]; },
+                "funcNull": function()    { return null; }
+            };
+            var instance = mockObject( original );
+
+            same( original.str,               instance.str,               "original.str" );
+            same( original.arr,               instance.arr,               "original.arr" );
+            same( original.funcStr("a","b"),  instance.funcStr("a","b"),  "original.funcStr('a','b')" );
+            same( original.funcArr("a","b"),  instance.funcArr("a","b"),  "original.funcArr('a','b')" );
+            same( original.funcNull("a","b"), instance.funcNull("a","b"), "original.funcNull('a','b')" );
+        });
+        test( "mockObject - should modify functions with testable properties", function() {
+            expect( 9 );
+
+            // WHEN
+            var original = { testfunc: function(a,b) { return "string:"+a+b; } };
+            var instance = mockObject( original );
+
+            same(   instance.testfunc.called,     0,             "init: instance.testfunc.called" );
+            same(   instance.testfunc.lastArgs,   [],            "init: instance.testfunc.lastArgs" );
+            same(   instance.testfunc.lastReturn, undefined,     "init: instance.testfunc.lastReturn" );
+
+            instance.testfunc( "a", "b" );
+            same(   instance.testfunc.called,     1,             "called(a,b): instance.testfunc.called" );
+            same(   instance.testfunc.lastArgs,   ["a","b"],     "called(a,b): instance.testfunc.lastArgs" );
+            same(   instance.testfunc.lastReturn, "string:ab",   "called(a,b): instance.testfunc.lastReturn" );
+
+            instance.testfunc( "x", "y" );
+            same(   instance.testfunc.called,     2,             "called(x,y): instance.testfunc.called" );
+            same(   instance.testfunc.lastArgs,   ["x","y"],     "called(x,y): instance.testfunc.lastArgs" );
+            same(   instance.testfunc.lastReturn, "string:xy",   "called(x,y): instance.testfunc.lastReturn" );
+        });
+        test( "mockObject - should not modify strings/obj/number/other with testable properties", function() {
+            expect( 8 );
+
+            var instance1 = mockObject({ testfunc: function(){} });
+            var instance2 = mockObject({ testfunc: "" } );
+            var instance3 = mockObject({ testfunc: {} } );
+            var instance4 = mockObject({ testfunc: 1 } );
+
+            same( instance1.testfunc.called,   0,         "instance1.testfunc.called" );
+            same( instance1.testfunc.lastArgs, [],        "instance1.testfunc.lastArgs" );
+
+            same( instance2.testfunc.called,   undefined, "instance2.testfunc.called" );
+            same( instance2.testfunc.lastArgs, undefined, "instance2.testfunc.lastArgs" );
+
+            same( instance3.testfunc.called,   undefined, "instance3.testfunc.called" );
+            same( instance3.testfunc.lastArgs, undefined, "instance3.testfunc.lastArgs" );
+
+            same( instance4.testfunc.called,   undefined, "instance4.testfunc.called" );
+            same( instance4.testfunc.lastArgs, undefined, "instance4.testfunc.lastArgs" );
+        });
+
+        test( "mockFunction - should modify functions with testable properties", function() {
+            expect( 11 );
+
+            // WHEN
+            var original = function(a,b) { return "string:"+a+b; };
+            var testfunc = mockFunction( original );
+
+            same(   testfunc.called,     0,             "init: testfunc.called" );
+            same(   testfunc.lastArgs,   [],            "init: testfunc.lastArgs" );
+            same(   testfunc.lastReturn, undefined,     "init: testfunc.lastReturn" );
+
+            testfunc( "a", "b" );
+            same(   testfunc.called,     1,             "called(a,b): testfunc.called" );
+            same(   testfunc.lastArgs,   ["a","b"],     "called(a,b): testfunc.lastArgs" );
+            same(   testfunc.lastReturn, "string:ab",   "called(a,b): testfunc.lastReturn" );
+
+            testfunc( "x", "y" );
+            same(   testfunc.called,     2,             "called(x,y): testfunc.called" );
+            same(   testfunc.lastArgs,   ["x","y"],     "called(x,y): testfunc.lastArgs" );
+            same(   testfunc.lastReturn, "string:xy",   "called(x,y): testfunc.lastReturn" );
+
+            equals( testfunc("a", "b"), original("a", "b"), 'testfunc("a", "b") == original("a", "b")' );
+            equals( testfunc("x", "y"), original("x", "y"), 'testfunc("x", "y") == original("x", "y")' );
+        });
+
+
+        test( "mockAjax - when function is called parameters are set correctly", function()
+        {
+            //GIVEN
+
+            expect( 8 );
+
+
+
+            FT = { ajax:{}}
+
+            equals( FT.ajax.flags, undefined );
+            equals( $.ajaxLastOptions,undefined );
+            equals( $.ajaxServer,undefined );
+            equals( $._ajax, undefined );
+
+            //WHEN
+
+            mockAjax();
+
+            //THEN
+            isObj( FT.ajax.flags, {} );
+            equals( $.ajaxLastOptions, null );
+            equals( !!$.ajaxServer, true );
+            equals( !!$._ajax, true );
+
+        });
+
+
+        test( "mockAjax - calling rewritten $.ajax as success", function()
+        {
+            //GIVEN
+
+            expect( 3 );
+
+
+
+            FT = { ajax:{}}
+            mockAjax();
+            $.ajaxServer.response = "dummy1";
+            $.ajaxServer.status = "success";
+
+            //WHEN
+
+
+            $.ajax( {test:true} );
+
+
+            //THEN
+            equals( $.ajaxLastOptions.test, true );
+            equals( $.ajaxLastError, undefined );
+            equals( $.ajaxLastResponse, "dummy1" );
+
+        });
+
+        test( "mockAjax - calling rewritten $.ajax as success to test response callback", function()
+        {
+            //GIVEN
+
+            expect( 3 );
+
+
+
+            FT = { ajax:{}}
+            mockAjax();
+            $.ajaxServer.response = function(){ return "testresponse";};
+            $.ajaxServer.status = "success";
+
+            //WHEN
+
+
+            $.ajax( {test:true} );
+
+
+            //THEN
+            equals( $.ajaxLastOptions.test, true );
+            equals( $.ajaxLastError, undefined );
+            equals( $.ajaxLastResponse, "testresponse" );
+
+        });
+        test( "mockAjax - calling rewritten $.ajax as error", function()
+        {
+            //GIVEN
+
+            expect( 2 );
+
+
+            FT = { ajax:{}}
+            mockAjax();
+            $.ajaxServer.response = "dummy2";
+            $.ajaxServer.status = "error";
+
+            //WHEN
+
+
+                $.ajax( {} );
+
+
+            //THEN
+            equals( !!$.ajaxLastError, true );
+            equals( $.ajaxLastResponse, undefined );
+
+        });
+        test( "mockAjax - calling rewritten $.ajax as error to test error callback", function()
+        {
+            //GIVEN
+
+            expect( 2 );
+
+
+            FT = { ajax:{}}
+            mockAjax();
+            $.ajaxServer.error = function(){ return "testerror";}
+            $.ajaxServer.status = "error";
+
+            //WHEN
+
+
+                $.ajax( {} );
+
+
+            //THEN
+            equals( $.ajaxLastError, "testerror" );
+            equals( $.ajaxLastResponse, undefined );
+
+        });
+
+        test( "mockAjax - calling rewritten $.ajax as success with an  success callback", function()
+        {
+            //GIVEN
+
+            expect( 2 );
+
+            FT = { ajax:{}};
+
+            mockAjax();
+            $.ajaxServer.response = "qwerty";
+            $.ajaxServer.status = "success";
+
+            var option = { success: function(){ option.test1 = arguments[ 0 ];  option.test2 = arguments[ 1 ];  } };
+
+            //WHEN
+
+
+            $.ajax( option );
+
+
+            //THEN
+            equals( option.test1, "qwerty" );
+            equals( option.test2, "success" );
+
+
+        });
+
+        test( "mockAjax - calling rewritten $.ajax as error with an  error callback", function()
+        {
+            //GIVEN
+
+            expect( 3 );
+
+            FT = { ajax:{}};
+
+            mockAjax();
+            $.ajaxServer.error = "qwerty";
+            $.ajaxServer.status = "error";
+
+            var option = { error: function(){ option.test1 = arguments[ 0 ];  option.test2 = arguments[ 1 ]; option.test3 = arguments[2 ];  } };
+
+            //WHEN
+
+
+            $.ajax( option );
+
+
+            //THEN
+            equals( typeof option.test1, "object" );
+            equals( option.test2, "error" );
+            equals( option.test3, "qwerty" );
+
+
+        });
+
+        test( "mockAjax - calling rewritten $.ajax as error with an  complete callback", function()
+        {
+            //GIVEN
+
+            expect( 1 );
+
+            FT = { ajax:{}};
+
+            mockAjax();
+            $.ajaxServer.error = "qwerty";
+            $.ajaxServer.status = "error";
+
+            var option = { complete: function(){ option.test1 = arguments[ 1 ];  } };
+
+            //WHEN
+
+
+            $.ajax( option );
+
+
+            //THEN
+            equals( option.test1, "error" );
+
+
+        });
+        test( "mockAjax - calling rewritten $.ajax as success with a complete callback", function()
+        {
+            //GIVEN
+
+            expect( 1 );
+
+            FT = { ajax:{}};
+
+            mockAjax();
+            $.ajaxServer.error = "qwerty";
+            $.ajaxServer.status = "success";
+
+            var option = { complete: function(){ option.test1 = arguments[ 1 ];  } };
+
+            //WHEN
+
+
+            $.ajax( option );
+
+
+            //THEN
+            equals( option.test1, "success" );
+
+
+        });
+
+
+        test( "restoreAjax", function()
+        {
+            //GIVEN
+
+            expect( 1 );
+
+            $._ajax = 1;
+                $.ajax = 2;
+
+
+            //WHEN
+
+            restoreAjax();
+
+            //THEN
+
+            equals( $.ajax, 1 );
+        });
+
+        test( "verify that restoreSelectors.data exists as an object ", function()
+        {
+            //GIVEN
+
+            expect( 1 );
+
+            //WHEN
+            //THEN
+
+            equals( typeof restoreSelectors.data, "object"  );
+        });
+
+        test( "event manager - returned instance is the same as the supplied instance", function()
+        {
+            //GIVEN
+
+            expect( 10 );
+            var test = {};
+            //WHEN
+
+            var instance = mockEventManager( test )
+
+            //THEN
+
+            equals( instance, test );
+
+            equals( !!instance.trigger.called, true );
+            equals( !!instance.trigger.lastArgs, true );
+            equals( !!instance.trigger.lastReturn, true );
+             equals( !!instance.register.called , true );
+            equals( !!instance.register.lastArgs , true );
+             equals( !!instance.register.lastContext , true );
+              equals( !!instance.unregister.called, true );
+            equals( !!instance.unregister.lastArgs, true );
+            equals( !!instance.unregister.lastContext, true );
+
+
+
+        });
+
+
+        test( "event manager trigger", function()
+        {
+            //GIVEN
+
+                expect( 4 );
+
+                var mockem =
+                {
+                    trigger: function()
+                    {
+                        return "trigger";
+                    },
+                    register: function()
+                    {
+                        return "register";
+                    },
+                    unregister:function()
+                    {
+                        return "unregister";
+                    }
+                };
+
+            //WHEN
+
+                var instance = mockEventManager( mockem );
+
+                var test = instance.trigger( "testevent", "arg1" );
+
+            //THEN
+
+
+                equals( test, "trigger");
+                equals( instance.trigger.called.testevent, 1 )
+                equals( instance.trigger.lastArgs.testevent[0], "arg1" )
+                equals( instance.trigger.lastReturn.testevent, test )
+
+        });
+        test( "event manager register", function()
+        {
+            //GIVEN
+
+                expect( 4 );
+
+                var mockem =
+                {
+                    trigger: function()
+                    {
+                        return "trigger";
+                    },
+                    register: function()
+                    {
+                        return "register";
+                    },
+                    unregister:function()
+                    {
+                        return "unregister";
+                    }
+                };
+
+            //WHEN
+
+                var instance = mockEventManager( mockem );
+
+                var test = instance.register( "context","testevent", "arg1" );
+
+            //THEN
+
+
+                equals( test, "register");
+                equals( instance.register.called.testevent, 1 )
+                equals( instance.register.lastArgs.testevent.length, 3)
+                equals( instance.register.lastContext.testevent, "context" )
+
+        });
+
+        test( "event manager unregister", function()
+        {
+            //GIVEN
+
+                expect( 4 );
+
+                var mockem =
+                {
+                    trigger: function()
+                    {
+                        return "trigger";
+                    },
+                    register: function()
+                    {
+                        return "register";
+                    },
+                    unregister:function()
+                    {
+                        return "unregister";
+                    }
+                };
+
+            //WHEN
+
+                var instance = mockEventManager( mockem );
+
+                var test = instance.unregister( "context","testevent", "arg1" );
+
+            //THEN
+
+                equals( test, "unregister");
+                equals( instance.unregister.called.testevent, 1 )
+                equals( instance.unregister.lastArgs.testevent.length, 3)
+                equals( instance.unregister.lastContext.testevent, "context" )
+
+        });
+
+        test( "mockForm", function() {
+            var form = mockForm( $("form#mockForm") );
+            var expectedFormData = {
+                text:     "Text Value",
+                hidden:   "Hidden Value",
+                checkbox: true,
+                textarea: "Textarea Value",
+                select:   "Select Value",
+                radio:    "Radio Value"
+            };
+
+            form.submit();
+            isObj( form[0].data, expectedFormData, "form[0].data" );
+        });
+    });
+
+
+
+    </script>
+
+
+    <script type="text/javascript" src="testrunner.js"></script>
